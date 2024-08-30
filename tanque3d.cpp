@@ -11,6 +11,7 @@
 float cameraAngle = 0.0f;
 float AngTorreX = 0.0f;
 float AngTorreY = 0.0f;
+float AngTank = 0.0f;
 float PosX =0.0f;
 float PosZ =0.0f;
 
@@ -311,6 +312,9 @@ void drawCylinder(GLuint shaderProgram, GLuint cylinderVAO, glm::mat4 model, glm
 }
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT){
+        float MovX = sin(AngTank)*0.01;
+        float MovZ = cos(AngTank)*0.01;
+        printf("%f // %f ", cos(AngTank), sin(AngTank));
         if (key == GLFW_KEY_D){
             AngTorreX -= 1.0f;
         }
@@ -328,16 +332,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             }
         }
         if (key == GLFW_KEY_UP){
-            PosZ += 0.1f;
+            PosZ += MovZ;
+            PosX -= MovX;
         }
         if (key == GLFW_KEY_DOWN){
-            PosZ -= 0.1f;
+            PosZ -= MovZ;
+            PosX += MovX;
         }
         if (key == GLFW_KEY_LEFT){
-           PosX += 0.1f;
+           AngTank += 1.0f;
         }
         if (key == GLFW_KEY_RIGHT){
-            PosX-= 0.1f;
+            AngTank -= 1.0f;
         }
     }
 }
@@ -386,13 +392,17 @@ int main() {
         if(AngTorreX == 180||AngTorreX == -180){
             AngTorreX*=-1;
         }
+        if(AngTank==180||AngTank == -180){
+            AngTank*=-1;
+        }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         
         glm::mat4 model = glm::mat4(1.0f);
         //glm::mat4 view = glm::lookAt(glm::vec3(4.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         //glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
-        cameraAngle += 0.0001f;  // Aumente ou diminua este valor para ajustar a velocidade de rotação
+        cameraAngle += 0.000f;  // Aumente ou diminua este valor para ajustar a velocidade de rotação
 
     // Atualizar a matriz de visualização
     glm::mat4 view = glm::lookAt(
@@ -400,23 +410,38 @@ int main() {
         glm::vec3(0.0f, 0.0f, 0.0f),  // Olhar para o centro da cena
         glm::vec3(0.0f, 1.0f, 0.0f)   // Definir o eixo "up" (para cima)
     );
-
+    
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
         
         // Corpo
+        //model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+        model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+        model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(-PosX, 0.0f, -PosZ));
         model = glm::translate(model, glm::vec3(0.0f+PosX, 0.0f, 0.0f+PosZ));
         model = glm::scale(model, glm::vec3(1.0f, 0.75f, 2.5f));  // Extend the front
         drawCube(shaderProgram, VAO, model, view, projection);
 
         //Esteira direita
         model = glm::mat4(1.0f);
+        //model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+        model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+        model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(-PosX, 0.0f, -PosZ));
         model = glm::translate(model, glm::vec3(0.6f+PosX, -0.30f, 0.0f+PosZ));
         model = glm::scale(model, glm::vec3(0.25f, 0.75f, 2.5f));
         drawCube(shaderProgram, VAO, model, view, projection);
 
         //Esteira Esquerda
         model = glm::mat4(1.0f);
+        //model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+        model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+        model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(-PosX, 0.0f, -PosZ));
         model = glm::translate(model, glm::vec3(-0.6f+PosX, -0.30f, 0.0f+PosZ));
         model = glm::scale(model, glm::vec3(0.25f, 0.75f, 2.5f));
         drawCube(shaderProgram, VAO, model, view, projection);
@@ -424,21 +449,33 @@ int main() {
         for(int i=0;i<3;i++){
             //Roda Direita
             model = glm::mat4(1.0f);
+            //model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+            model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+            model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::translate(model, glm::vec3(-PosX, 0.0f, -PosZ));
             model = glm::translate(model, glm::vec3(0.7f+PosX, -0.30f, 0.825f-(i*0.425*2)+PosZ));
             model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            model = glm::rotate(model, glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
             model = glm::scale(model, glm::vec3(0.75f, 0.75f, 0.65f)); // Ajustar escala para rodas
             drawCylinder(shaderProgram, wheelVAO, model, view, projection, wheelIndices.size());
             //Roda Esquerda
             model = glm::mat4(1.0f);
+            //model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+            model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+            model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+            model = glm::translate(model, glm::vec3(-PosX, 0.0f, -PosZ));
             model = glm::translate(model, glm::vec3(-0.7f+PosX, -0.30f, 0.825f-(i*0.425*2)+PosZ));
             model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            model = glm::rotate(model, glm::radians(0.0F), glm::vec3(0.0f, 0.0f, 1.0f));
             model = glm::scale(model, glm::vec3(0.7f, 0.7f, 0.65f)); // Ajustar escala para rodas
             drawCylinder(shaderProgram, wheelVAO, model, view, projection, wheelIndices.size());
         }
         //torre
         model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+        model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+        model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(-PosX, 0.0f, -PosZ));
         model = glm::translate(model, glm::vec3(0.0f+PosX, 0.625f, -0.75f+PosZ));
         model = glm::rotate(model, glm::radians(AngTorreX), glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::rotate(model, glm::radians(AngTorreY), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -447,6 +484,10 @@ int main() {
 
         //Canhao
         model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+        model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
+        model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(-PosX, 0.0f, -PosZ));
         model = glm::translate(model, glm::vec3(0.0f+PosX, 0.625f, 0.25f+PosZ));  // Adjust cannon position
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, -0.625f * 1.5f));
         model = glm::rotate(model, glm::radians(AngTorreX), glm::vec3(0.0f, 1.0f, 0.0f));  // Rotate to align with turret
