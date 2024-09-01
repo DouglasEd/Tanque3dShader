@@ -7,7 +7,7 @@
 #include <vector>
 #include <cmath>
 
-
+bool keys[1024];
 float cameraAngle = 0.0f;
 float AngTorreX = 0.0f;
 float AngTorreY = 0.0f;
@@ -310,40 +310,102 @@ void drawCylinder(GLuint shaderProgram, GLuint cylinderVAO, glm::mat4 model, glm
     glDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS || action == GLFW_REPEAT){
-        float MovX = sin(AngTank)*0.01;
-        float MovZ = cos(AngTank)*0.01;
-        printf("%f // %f ", cos(AngTank), sin(AngTank));
-        if (key == GLFW_KEY_D){
+/*void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        // Converter o ângulo do tanque para radianos
+        float radians = glm::radians(AngTank);
+
+        // Calcular os deslocamentos nas direções X e Z
+        float MovX = sin(radians) * 0.01;
+        float MovZ = cos(radians) * 0.01;
+
+        if (key == GLFW_KEY_D) {
             AngTorreX -= 1.0f;
         }
-        if (key == GLFW_KEY_A){
+        if (key == GLFW_KEY_A) {
             AngTorreX += 1.0f;
         }
-        if (key == GLFW_KEY_W){
-            if(AngTorreY>-90){
+        if (key == GLFW_KEY_W) {
+            if (AngTorreY > -90) {
                 AngTorreY -= 1.0f;
             }
         }
-        if (key == GLFW_KEY_S){
-            if(AngTorreY<0){
+        if (key == GLFW_KEY_S) {
+            if (AngTorreY < 0) {
                 AngTorreY += 1.0f;
             }
         }
-        if (key == GLFW_KEY_UP){
-            PosZ += MovZ;
-            PosX -= MovX;
-        }
-        if (key == GLFW_KEY_DOWN){
-            PosZ -= MovZ;
+        if (key == GLFW_KEY_UP) {
             PosX += MovX;
+            PosZ += MovZ;
         }
-        if (key == GLFW_KEY_LEFT){
-           AngTank += 1.0f;
+        if (key == GLFW_KEY_DOWN) {
+            PosX -= MovX;
+            PosZ -= MovZ;
         }
-        if (key == GLFW_KEY_RIGHT){
+        if (key == GLFW_KEY_LEFT) {
+            AngTank += 1.0f;
+            if (AngTank > 180.0f) {
+                AngTank -= 360.0f;
+            }
+        }
+        if (key == GLFW_KEY_RIGHT) {
             AngTank -= 1.0f;
+            if (AngTank < -180.0f) {
+                AngTank += 360.0f;
+            }
+        }
+
+        printf("ANG: %f, MOV X: %f, MOV Z:%f\n", AngTank, MovX, MovZ);
+    }
+}*/
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        keys[key] = true;
+    } else if (action == GLFW_RELEASE) {
+        keys[key] = false;
+    }
+}
+
+void processMovement() {
+    float radians = glm::radians(AngTank);
+    float MovX = sin(radians) * 0.01;
+    float MovZ = cos(radians) * 0.01;
+
+    if (keys[GLFW_KEY_D]) {
+        AngTorreX -= 1.0f;
+    }
+    if (keys[GLFW_KEY_A]) {
+        AngTorreX += 1.0f;
+    }
+    if (keys[GLFW_KEY_W]) {
+        if (AngTorreY > -90) {
+            AngTorreY -= 1.0f;
+        }
+    }
+    if (keys[GLFW_KEY_S]) {
+        if (AngTorreY < 0) {
+            AngTorreY += 1.0f;
+        }
+    }
+    if (keys[GLFW_KEY_UP]) {
+        PosX += MovX;
+        PosZ += MovZ;
+    }
+    if (keys[GLFW_KEY_DOWN]) {
+        PosX -= MovX;
+        PosZ -= MovZ;
+    }
+    if (keys[GLFW_KEY_LEFT]) {
+        AngTank += 1.0f;
+        if (AngTank > 180.0f) {
+            AngTank -= 360.0f;
+        }
+    }
+    if (keys[GLFW_KEY_RIGHT]) {
+        AngTank -= 1.0f;
+        if (AngTank < -180.0f) {
+            AngTank += 360.0f;
         }
     }
 }
@@ -358,7 +420,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //Criação da janela
-    GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Cubes", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(1080, 920, "Tank3d", NULL, NULL);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -392,9 +454,7 @@ int main() {
         if(AngTorreX == 180||AngTorreX == -180){
             AngTorreX*=-1;
         }
-        if(AngTank==180||AngTank == -180){
-            AngTank*=-1;
-        }
+        processMovement();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         
@@ -413,7 +473,6 @@ int main() {
     
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
-        
         // Corpo
         //model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::translate(model, glm::vec3(PosX, 0.0f, PosZ));
@@ -496,6 +555,11 @@ int main() {
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 1.5f));  // Adjust cylinder scale
         drawCylinder(shaderProgram, cylinderVAO, model, view, projection, cylinderIndices.size());
         
+        //Chão
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, -1.175f, 0.0f));
+        model = glm::scale(model, glm::vec3(50.0f, 0.5f, 50.0f));  // Extend the front
+        drawCube(shaderProgram, VAO, model, view, projection);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
