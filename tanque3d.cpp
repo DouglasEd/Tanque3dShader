@@ -6,6 +6,8 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <chrono>
+#include <thread>
 
 bool keys[1024];
 float cameraAngle = 0.0f;
@@ -359,7 +361,7 @@ void drawCylinder(GLuint shaderProgram, GLuint cylinderVAO, glm::mat4 model, glm
         printf("ANG: %f, MOV X: %f, MOV Z:%f\n", AngTank, MovX, MovZ);
     }
 }*/
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+void key_callback(GLFWwindow*, int key, int /*scancode*/, int action, int /*mods*/) {
     if (action == GLFW_PRESS) {
         keys[key] = true;
     } else if (action == GLFW_RELEASE) {
@@ -408,6 +410,10 @@ void processMovement() {
             AngTank += 360.0f;
         }
     }
+    if(keys[GLFW_KEY_R]){
+        PosX=0;
+        PosZ=0;
+    }
 }
 int main() {
     // Iniciação do GLFW
@@ -448,9 +454,12 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     glfwSetKeyCallback(window, key_callback);
-
+    const int FPS = 60;
+    // Calcular o tempo de espera necessário por frame em milissegundos
+    const int frameDelay = 1000 / FPS;
     // Looping principal do Programa, onde é desenhado as formas e controlado a Camera
     while (!glfwWindowShouldClose(window)) {
+        auto frameStart = std::chrono::high_resolution_clock::now();
         if(AngTorreX == 180||AngTorreX == -180){
             AngTorreX*=-1;
         }
@@ -464,14 +473,14 @@ int main() {
 
         cameraAngle += 0.000f;  // Aumente ou diminua este valor para ajustar a velocidade de rotação
 
-    // Atualizar a matriz de visualização
-    glm::mat4 view = glm::lookAt(
-        glm::vec3(4.0f * cos(cameraAngle), 3.0f, 4.0f * sin(cameraAngle)),  // Posição da câmera
-        glm::vec3(0.0f, 0.0f, 0.0f),  // Olhar para o centro da cena
-        glm::vec3(0.0f, 1.0f, 0.0f)   // Definir o eixo "up" (para cima)
-    );
-    
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+        // Atualizar a matriz de visualização
+        glm::mat4 view = glm::lookAt(
+            glm::vec3(4.0f * cos(cameraAngle), 3.0f, 4.0f * sin(cameraAngle)),  // Posição da câmera
+            glm::vec3(0.0f, 0.0f, 0.0f),  // Olhar para o centro da cena
+            glm::vec3(0.0f, 1.0f, 0.0f)   // Definir o eixo "up" (para cima)
+        );
+        
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
         // Corpo
         //model = glm::rotate(model, glm::radians(AngTank), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -562,6 +571,13 @@ int main() {
         drawCube(shaderProgram, VAO, model, view, projection);
         glfwSwapBuffers(window);
         glfwPollEvents();
+        auto frameEnd = std::chrono::high_resolution_clock::now();
+        auto frameDuration = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart).count();
+
+        // Se o tempo de frame for menor que o tempo de espera, pausar o thread pelo tempo restante
+        if (frameDuration < frameDelay) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(frameDelay - frameDuration));
+        }
     }
     
     glDeleteVertexArrays(1, &VAO);
