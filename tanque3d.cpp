@@ -3,11 +3,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <sstream>
 #include <iostream>
 #include <vector>
 #include <cmath>
 #include <chrono>
 #include <thread>
+#include <fstream>
 
 bool keys[1024];
 float cameraAngle = 0.0f;
@@ -22,34 +24,22 @@ GLuint wheelVAO, wheelVBO, wheelEBO;
 std::vector<unsigned int> cylinderIndices;
 std::vector<unsigned int> wheelIndices;
 
-// Definição do VertexShader e FragmentShader
-const char* vertexShaderSource = R"(
-#version 330 core
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec3 aColor;
+// Carregamento dos arquivos de shader
+std::string loadShaderSource(const char* filePath) {
+    std::ifstream shaderFile;
+    std::stringstream shaderStream;
 
-out vec3 ourColor;
+    shaderFile.open(filePath);
+    if (shaderFile.is_open()) {
+        shaderStream << shaderFile.rdbuf();
+        shaderFile.close();
+    } else {
+        std::cerr << "Failed to open shader file: " << filePath << std::endl;
+    }
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-
-void main() {
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
-    ourColor = aColor;
+    return shaderStream.str();
 }
-)";
 
-const char* fragmentShaderSource = R"(
-#version 330 core
-out vec4 FragColor;
-
-in vec3 ourColor;
-
-void main() {
-    FragColor = vec4(ourColor, 1.0);
-}
-)";
 
 // Compilação dos Shaders
 GLuint compileShader(GLenum type, const char* source) {
@@ -69,6 +59,12 @@ GLuint compileShader(GLenum type, const char* source) {
 
 // Criação do programa do shader
 GLuint createShaderProgram() {
+    std::string vertexCode = loadShaderSource("vertex_shader.glsl");
+    std::string fragmentCode = loadShaderSource("fragment_shader.glsl");
+
+    const char* vertexShaderSource = vertexCode.c_str();
+    const char* fragmentShaderSource = fragmentCode.c_str();
+
     GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertexShaderSource);
     GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
     
@@ -90,6 +86,7 @@ GLuint createShaderProgram() {
     
     return shaderProgram;
 }
+
 //Função de criação do cilidro usado para o canhão
 void createCylinder(std::vector<float>& vertices, std::vector<unsigned int>& indices, int numSegments = 36, float height = 1.0f, float radius = 1.0f) {
     float angleStep = 2.0f * 3.14159265f / numSegments;
@@ -476,7 +473,7 @@ int main() {
         // Atualizar a matriz de visualização
         glm::mat4 view = glm::lookAt(
             glm::vec3(4.0f * cos(cameraAngle), 3.0f, 4.0f * sin(cameraAngle)),  // Posição da câmera
-            glm::vec3(0.0f, 0.0f, 0.0f),  // Olhar para o centro da cena
+            glm::vec3(PosX, 0.0f, PosZ),  // Olhar para o centro da cena
             glm::vec3(0.0f, 1.0f, 0.0f)   // Definir o eixo "up" (para cima)
         );
         
